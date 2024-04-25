@@ -374,10 +374,19 @@
 			<F N="m1.mac."/>
 			<F N="macxx.doc"/>
 			<F
-				N="Makefile"
+				N="Makefile.common"
+				Type="Makefile"/>
+			<F
+				N="Makefile.linux"
 				Type="Makefile"/>
 			<F
 				N="Makefile.mingw32"
+				Type="Makefile"/>
+			<F
+				N="Makefile.msys2"
+				Type="Makefile"/>
+			<F
+				N="Makefile.pi32"
 				Type="Makefile"/>
 			<F N="stab.def"/>
 		</Folder>

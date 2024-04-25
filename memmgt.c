@@ -26,10 +26,12 @@ long misc_pool_used;
 typedef struct hdr
 {
 	unsigned long size;
-	void *caller;
 	int line;
 	char *file;
+#if defined(DEBUG_MALLOC)
+	void *caller;
 	struct hdr *next, *prev;
+#endif
 	unsigned long magic;
 } Hdr;
 
@@ -94,7 +96,7 @@ static void check_all(void)
 int mem_free(void *s, char *file, int line)
 {
 	Hdr *hdr;
-	char *msg = 0;
+	char *msg = NULL;
 
 	if ( s == 0 )
 	{
@@ -140,8 +142,9 @@ void *mem_alloc(int nbytes, char *file, int line)
 	unsigned long *end;
 	int siz;
 
-	nbytes = (nbytes + (sizeof(long) - 1)) & ~(sizeof(long) - 1);
-	siz = nbytes + sizeof(Hdr) + sizeof(long);
+	/* Round the caller's count by size of pointer then make it a multiple of sizeof pointer */
+	nbytes = (nbytes + (sizeof(char *) - 1)) & ~(sizeof(char *) - 1);
+	siz = nbytes + sizeof(Hdr) + sizeof(char *);
 	hdr = (Hdr *)calloc((unsigned int)siz, (unsigned int)1);  /* get some memory from OS */
 	if ( hdr == (Hdr *)0 )
 	{
@@ -153,13 +156,13 @@ void *mem_alloc(int nbytes, char *file, int line)
 		fprintf(stderr, "%s", emsg);
 		abort();
 	}
-	hdr->size = nbytes;
-	hdr->file = file;
-	hdr->line = line;
-	hdr->magic = PRE_MAGIC;
-	s = (void *)(hdr + 1);
-	end = (unsigned long *)((char *)s + nbytes);
-	*end = POST_MAGIC;
+	hdr->size = nbytes;	/* Rounded up size of region */
+	hdr->file = file;	/* pointer to file name */
+	hdr->line = line;	/* line number */
+	hdr->magic = PRE_MAGIC;	/* surround user's buffer with known information */
+	s = (void *)(hdr + 1);	/* Point to buffer to hand back to user */
+	end = (unsigned long *)((char *)s + nbytes); /* Get pointer to end of buffer */
+	*end = POST_MAGIC;	/* Stuff a magic number there too */
 #if defined(DEBUG_MALLOC)
 	if ( top == 0 )
 	{
@@ -227,7 +230,8 @@ void* mem_realloc(void *old, int nbytes, char *file, int line)
 #endif
 		*end = 0;
 
-		nbytes = (nbytes + (sizeof(long) - 1)) & ~(sizeof(long) - 1);
+		/* Round up user's size and make it a multiple of sizeof pointer */
+		nbytes = (nbytes + (sizeof(char *) - 1)) & ~(sizeof(char *) - 1);
 		siz = nbytes + sizeof(Hdr) + sizeof(long);
 		s = (void *)realloc(hdr, siz);
 		if ( s == NFG )
@@ -241,18 +245,18 @@ void* mem_realloc(void *old, int nbytes, char *file, int line)
 			abort();
 		}
 		hdr = (Hdr *)s;
-		hdr->file = file;
-		hdr->line = line;
-		hdr->magic = PRE_MAGIC;
+		hdr->file = file;	/* Pointer to filename */
+		hdr->line = line;	/* line number */
+		hdr->magic = PRE_MAGIC;	/* Marker */
 		if ( nbytes > hdr->size )
-		{     /* 0 the newly alloc'd  area */
+		{     /* 0 the newly alloc'd  area if it got bigger */
 			s = (char *)(hdr + 1) + hdr->size;
 			memset(s, 0, nbytes - hdr->size);
 		}
-		s = (void *)(hdr + 1);
-		end = (unsigned long *)((char *)s + nbytes);
-		*end = POST_MAGIC;
-		hdr->size = nbytes;
+		s = (void *)(hdr + 1);	/* Compute pointer to user's buffer */
+		end = (unsigned long *)((char *)s + nbytes); /* Compute pointer to end of buffer */
+		*end = POST_MAGIC;	/* deposit a marker */
+		hdr->size = nbytes;	/* record the new buffer size */
 #if defined(DEBUG_MALLOC)
 		hdr->next = next;
 		hdr->prev = prev;

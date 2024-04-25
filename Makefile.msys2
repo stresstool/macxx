@@ -1,0 +1,22 @@
+# This is for a MSYS2 version running on Windows. Only been checked on a Windows 10 system.
+# For now, macxx has to be built to run in 32 bit mode.
+# It won't link on my test system. It wants to link against the 64 bit libs.
+# There's a way to make it use the 32 bit libs in multi-lib but I haven't figured
+# out how to do it yet. Instead, I build macxx under MinGW-32 then copied the .exe
+# files to /usr/local/bin in the MSYS2 tree and that seems to work just fine.
+
+HOST_CPU = -m32
+DELIM = '
+ARM32 = 0
+LINUX = 1
+MSYS2 = 1
+MINGW = 0
+DBG = #-g 
+CC = gcc
+ECHO = echo
+
+include Makefile.common
+
+
+
+

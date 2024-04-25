@@ -1,0 +1,15 @@
+# This is for a generic Linux build
+# For now, macxx has to be built to run in 32 bit mode.
+
+HOST_CPU = -m32
+DELIM = '
+ARM32 = 1
+LINUX = 1
+MSYS2 = 0
+MINGW = 0
+DBG = #-g 
+CC = gcc
+ECHO = /bin/echo -e
+
+include Makefile.common
+

@@ -1,0 +1,14 @@
+# This is for a 32 bit PiOS version (Debian 32 bit on a Raspberry Pi). Only test on a Pi5.
+# For now, macxx has to be built to run in 32 bit mode.
+
+HOST_CPU = 
+DELIM = '
+PiOS32 = 1
+LINUX = 1
+MSYS2 = 0
+MINGW = 0
+DBG = #-g 
+CC = gcc
+ECHO = /bin/echo -e
+
+include Makefile.common

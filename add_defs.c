@@ -350,6 +350,45 @@ static char *add_ext( char *sptr, char **ext, char **path)
 }
 #endif
 
+#define DEBUG_ADD_DEFS 0
+#if DEBUG_ADD_DEFS
+#define DUMP_TXT(a,b) dump_text(a,b)
+static void dump_txt(const char *title, const char *ptr)
+{
+	const char *src = ptr;
+	char *dst;
+	char tbuff[1024];
+	int slen, ii, jj;
+	
+	slen = snprintf(tbuff,sizeof(tbuff)-1, "%s: %p: ", title, ptr);
+	dst = tbuff + slen;
+	if ( ptr )
+	{
+		for (ii=0; ii < 128 && *src; ++ii, ++src)
+		{
+			snprintf(dst,4," %02X", (unsigned char)*src);
+			dst += 3;
+		}
+		*dst++ = ' ';
+		*dst++ = '|';
+		src = ptr;
+		for (jj=0; jj < ii; ++jj, ++src)
+		{
+			if ( isprint(*src) )
+				*dst++ = *src;
+			else
+				*dst++ = '.';
+		}
+		*dst++ = '|';
+	}
+	*dst++ = '\n';
+	*dst = 0;
+	fputs(tbuff,stdout);
+}
+#else	/* if DEBUG_ADD_DEFS*/
+#define DUMP_TXT(a,b) do { ; } while(0)
+#endif	/* if DEBUG_ADD_DEFS*/
+
 
 /*************************************************************************
  * Add default fields to filename
@@ -437,39 +476,64 @@ int add_defs( char *src_nam, char **inp_default_types, char **default_paths, int
         if (our_cwd[0] == NULL)
         {
             int cl;
-            char *tmps;
-            tmps = (char *)getcwd(our_cwd[0],0);
-			our_cwd[0] = tmps;
-            if (tmps != 0)
+            char *oTmps, *nTmps;
+			/* Get current working directory */
+            oTmps = (char *)getcwd(NULL,0);
+			DUMP_TXT("getcwd(1)", oTmps);
+            if ( oTmps )
             {
-                cl = strlen(tmps);
-                if (cl == 0 || tmps[cl-1] != C_PATH)
+				/* Get cwd length */
+                cl = strlen(oTmps);
+				/* If it is empty or it doesn't end with a path marker */
+                if (cl == 0 || oTmps[cl-1] != C_PATH)
                 {
-					tmps = (char *)realloc(tmps,cl+3);
-					if ( !tmps )
+					/* We have to add a C_PATH character to the end of the string */
+					/* Make the string longer by 2 chars (one for path chr and one for a nul) */
+					nTmps = (char *)realloc(oTmps,cl+2);
+					if ( !nTmps )
 					{
-						fprintf(stderr,"add_defs: ran out of memory allocating %d bytes\n", cl+3);
+						fprintf(stderr,"add_defs: ran out of memory allocating %d bytes\n", cl+2);
 						EXIT_FALSE;
 					}
-					tmps[cl++] = C_PATH;
-					tmps[cl] = 0;
+#if MALLOCDEBUG
+					fprintf(stderr,"add_defs: realloc'd %d bytes to %d at %08lX\n",cl, cl+3,nTmps);
+#endif
+					/* Stick the path chr at the end */
+					nTmps[cl++] = C_PATH;
+					/* Follow it with a nul */
+					nTmps[cl] = 0;
+					/* Remember the possible new pointer */
+					oTmps = nTmps;
                 }
-                tmps = (char *)malloc(cl+1);
-#if MALLOCDEBUG
-                fprintf(stderr,"add_defs: malloc'd %d bytes at %08lX\n",cl,tmps);
-#endif
-				if ( !tmps )
+#if 0
+				/* All this is un-necessary. Just use what getcwd() returned un-molested */
+				else
 				{
-					fprintf(stderr,"add_defs: ran out of memory allocating %d bytes\n", cl+1);
-					EXIT_FALSE;
-				}
+					nTmps = (char *)malloc(cl+1);
 #if MALLOCDEBUG
-				fprintf(stderr,"\tCopied %d bytes to it\n",cl);
+					fprintf(stderr,"add_defs: malloc'd %d bytes at %08lX\n",cl,nTmps);
 #endif
-				strcpy_upc(tmps,our_cwd[0]);
-				free(our_cwd[0]);
-				our_cwd[0] = tmps;
+					if ( !nTmps )
+					{
+						fprintf(stderr,"add_defs: ran out of memory allocating %d bytes\n", cl+1);
+						EXIT_FALSE;
+					}
+#if MALLOCDEBUG
+					fprintf(stderr,"\tCopied %d bytes to it\n",cl);
+#endif
+					strcpy_upc(nTmps,oTmps);
+					free(oTmps);
+					oTmps = nTmps;
+				}
+#endif
             }
+			else
+			{
+				/* getcwd() returned a NULL, so make the path an empty string */
+				oTmps = calloc(2,1);
+			}
+			our_cwd[0] = oTmps;
+			DUMP_TXT("getcwd(2)", oTmps);
         }
         default_paths = our_cwd;
     }
