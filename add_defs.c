@@ -77,6 +77,7 @@ static struct FAB fab;
 #if defined(VMS)
     #define strcpy_upc strcpy
     #define strncpy_upc strncpy
+    #define memcpy_upc strncpy
 
 static FILE_name *fill_in_file( void )
 {
@@ -122,11 +123,12 @@ static FILE_name *fill_in_file( void )
     fnp->name_only[nam.nam$b_name] = 0;
     return fnp;
 }
-#else
+#else	/* defined(VMS) */
     #if !defined(MS_DOS)
         #define strcpy_upc strcpy
-        #define strncpy_upc strncpy
-    #else
+        #define strncpy_upc memcpy
+        #define memcpy_upc memcpy
+    #else /* !defined(MS_DOS) */
 
 static void strcpy_upc(char *dst, char *src)
 {
@@ -146,7 +148,17 @@ static void strncpy_upc(char *dst, char *src, int len )
     }
     if (len > 0) *dst = 0;
 }
-    #endif
+static void memcpy_upc(char *dst, char *src, int len )
+{
+    char c;
+    while (len > 0 && (c= *src++) != 0)
+    {
+        *dst++ = islower(c) ? toupper(c) : c;
+        --len;
+    }
+    if (len > 0) *dst = 0;
+}
+    #endif /* !defined(MS_DOS) */
 
 static FILE_name *fill_in_file( const char *full, const char *cwd )
 {
@@ -187,7 +199,7 @@ static FILE_name *fill_in_file( const char *full, const char *cwd )
         namelen = type-name;
         typelen = strlen(type);
     }
-    tot = 2*pathlen+3*namelen+2*typelen+sizeof(FILE_name)+8+wholelen;
+    tot = 2*pathlen+3*namelen+2*typelen+sizeof(FILE_name)+8+wholelen+1;
     fnp = (FILE_name *)malloc(tot);
     if (fnp == 0)
     {
@@ -222,7 +234,7 @@ static FILE_name *fill_in_file( const char *full, const char *cwd )
 #endif
     return fnp;
 }
-#endif
+#endif	/* !defined(MS_DOS) */
 
 #if defined(VMS)
 /*************************************************************************

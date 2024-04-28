@@ -3,13 +3,18 @@
 
 HOST_CPU = -m32
 DELIM = ^
-ARM32 = 0
+PiOS32 = 1
 LINUX = 0
 MSYS2 = 0
 MINGW = 1
-DBG = #-g 
+EXTRA_DEFINES = -DMINGW
+EXTRA_CHKS =
+DBG = #-g
+OPT = -O2
 CC = mingw32-gcc
 ECHO = echo
+RM = CMD /C DEL /Q/S
+RMDIR = CMD /C RMDIR /Q/S
 
 include Makefile.common
 

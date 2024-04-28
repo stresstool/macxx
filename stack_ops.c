@@ -258,7 +258,7 @@ struct user_stack* create_stack(char *tmp_name, unsigned int usr_stk_size, Stack
 	usr_stk_new->usr_stk_array.generic = (void *)(usr_stk_new + 1);
 	/* Put the stack's name immediately after the stack's array */
 	usr_stk_new->usr_stk_name = (char *)(usr_stk_new->usr_stk_array.bytes+bytes);
-	strncpy(usr_stk_new->usr_stk_name,tmp_name,nameLen-1);
+	memcpy(usr_stk_new->usr_stk_name,tmp_name,nameLen-1);
 	usr_stk_new->usr_stk_name[nameLen-1] = 0;
 	usr_stk_new->usr_stk_size = usr_stk_size;
 	usr_stk_new->usr_stk_ptr = usr_stk_size;

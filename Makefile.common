@@ -40,12 +40,24 @@ ALLOPP3 = help_pp.o $(COREO)
 ALLH = structs.h header.h ct.h token_defs.h token.h 
 
 ifndef OPT
-	OPT = -O -DNDEBUG
+	OPT = -O2 -DNDEBUG
+endif
+ifndef DBG
+	DBG = 
+endif
+EXE =
+ifeq ($(MINGW),1)
+	EXE = .exe
+endif
+ifeq ($(MSYS2),1)
+	EXE = .exe
 endif
 
 # For Generic Unix/x86
 DEFINES = -DEXTERNAL_PACKED_STRUCTS -DM_UNIX -DINCLUDE_FLOAT -DNO_XREF -DGCC -DHAS_STRERROR -D_ISOC99_SOURCE #-DPC_DEBUG #-DMAX_LINE_ERRORS=12 #-DDEBUG_TXT_INP
+DEFINES += $(EXTRA_DEFINES)
 CHKS = -Wall -ansi -pedantic -Wno-char-subscripts #-std=c99
+CHKS += $(EXTRA_CHKS)
 CFLAGS = $(OPT) $(DBG) $(DEFINES) $(HOST_CPU) -I. $(CHKS)
 L = $(CC) $(HOST_CPU)
 C = $(CC) -c $(CFLAGS) 
@@ -55,14 +67,10 @@ MAKEFILE = Makefile.common
 
 ifeq ($(MINGW),1)
 
-RM = CMD /C DEL /Q/S
-
 %.o : %.c
 	$(ECHO) $(DELIM)    Compiling $<...$(DELIM)
 	$C -o $@ $<
 else
-
-RM = rm -f 
 
 %.o : %.c
 	$(ECHO) $(DELIM)    Compiling $<...$(DELIM);\
@@ -87,7 +95,7 @@ endif
 	$(ECHO) $(DELIM)    Compiling $< to $@ ...$(DELIM)
 	$(CC) $(CFLAGS) -E $< > $@
 
-all : macas mac65 mac68 mac68k mac69 macpp mactj mac11 #mac682k 
+all : macas$(EXE) mac65$(EXE) mac68$(EXE) mac68k$(EXE) mac69$(EXE) macpp$(EXE) mactj$(EXE) mac11$(EXE) #mac682k$(EXE)
 	$(ECHO) $(DELIM)    Done$(DELIM)
 
 define link_it
@@ -95,34 +103,34 @@ define link_it
 	$L $(DBG) -o $@ $(filter-out $(MAKEFILE),$^)
 endef
 
-macpp : $(MAKEFILE) $(ALLOPP0) $(ALLOPP1) $(ALLOPP2) $(ALLOPP3) 
+macpp$(EXE) : $(MAKEFILE) $(ALLOPP0) $(ALLOPP1) $(ALLOPP2) $(ALLOPP3) 
 	$(link_it)
 
-mactj : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLOTJ) 
+mactj$(EXE) : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLOTJ) 
 	$(link_it)
 
-mac65 : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO65) 
+mac65$(EXE) : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO65) 
 	$(link_it)
 
-mac68:  $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO68)
+mac68$(EXE):  $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO68)
 	$(link_it)
 
-mac68k : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO68K) 
+mac68k$(EXE) : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO68K) 
 	$(link_it)
 
-#mac682k : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO682K) 
+#mac682k$(EXE) : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO682K) 
 #	$(link_it)
 
-mac69:  $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO69)
+mac69$(EXE):  $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO69)
 	$(link_it)
 
-macas : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLOAS) 
+macas$(EXE) : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLOAS) 
 	$(link_it)
 
-mac11 : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO11)
+mac11$(EXE) : $(MAKEFILE) $(ALLO0) $(ALLO1) $(ALLO2) $(ALLO3) $(ALLO11)
 	$(link_it)
 	
-dmpod : dmpod.o
+dmpod$(EXE) : dmpod.o
 	$(link_it)
 
 gc_pp.o : gc.c token.h token_defs.h structs.h add_defs.h header.h memmgt.h ct.h \
@@ -223,7 +231,7 @@ pass168k.o : pass1.c token.h token_defs.h structs.h add_defs.h header.h memmgt.h
 
 clean :
 	$(ECHO) $(DELIM)    Cleaning ...$(DELIM)
-	$(RM) mac65 mac68 mac69 macas mac68k macpp mac682k mactj mac11 *.o *.b *@ *.d *.E
+	$(RM) mac65$(EXE) mac68$(EXE) mac69$(EXE) macas$(EXE) mac68k$(EXE) macpp$(EXE) mac682k$(EXE) mactj$(EXE) mac11$(EXE) *.o *.b *.d *.E
 
 add_defs.o : add_defs.c add_defs.h
 char_table.o : char_table.c ct.h 

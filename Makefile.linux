@@ -3,13 +3,17 @@
 
 HOST_CPU = -m32
 DELIM = '
-ARM32 = 1
+PiOS32 = 1
 LINUX = 1
 MSYS2 = 0
 MINGW = 0
-DBG = #-g 
+EXTRA_DEFINES =
+EXTRA_CHKS =
+DBG = #-g
+OPT = -O2
 CC = gcc
 ECHO = /bin/echo -e
+RM = rm -f 
 
 include Makefile.common
 

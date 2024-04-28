@@ -87,7 +87,10 @@ void opcinit( void )          /* preloads the opcode table */
             get_token_pool(max_opcode_length+1, 1);
         len = strlen(opc->name);
         if (len > max_opcode_length) len = max_opcode_length;
-        strncpy(token_pool,opc->name,len);
+        /* Keep gcc 13.2.1 quiet */
+        if ( len > token_pool_size )
+            len = token_pool_size;
+        strncpy(token_pool, opc->name, len);
         *(token_pool+len) = 0;
         op = opcode_lookup(token_pool,1);
         ++len;
@@ -108,6 +111,9 @@ void opcinit( void )          /* preloads the opcode table */
             get_token_pool(max_opcode_length+1, 1);
         len = strlen(dir->name);
         if (len > max_opcode_length) len = max_opcode_length;
+        /* Keep gcc 13.2.1 quiet */
+        if ( len > token_pool_size )
+            len = token_pool_size;
         strncpy(token_pool,dir->name,len);
         *(token_pool+len) = 0;
         op = opcode_lookup(token_pool,1);
