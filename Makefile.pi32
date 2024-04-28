@@ -9,7 +9,8 @@ MSYS2 = 0
 MINGW = 0
 EXTRA_DEFINES =
 EXTRA_CHKS =
-DBG = #-g 
+DBG = 
+OPT = -O
 CC = gcc
 ECHO = /bin/echo -e
 

@@ -39,12 +39,6 @@ ALLOPP3 = help_pp.o $(COREO)
 
 ALLH = structs.h header.h ct.h token_defs.h token.h 
 
-ifndef OPT
-	OPT = -O2 -DNDEBUG
-endif
-ifndef DBG
-	DBG = 
-endif
 EXE =
 ifeq ($(MINGW),1)
 	EXE = .exe

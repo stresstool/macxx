@@ -364,7 +364,7 @@ static char *add_ext( char *sptr, char **ext, char **path)
 
 #define DEBUG_ADD_DEFS 0
 #if DEBUG_ADD_DEFS
-#define DUMP_TXT(a,b) dump_text(a,b)
+#define DUMP_TXT(a,b) dump_txt(a,b)
 static void dump_txt(const char *title, const char *ptr)
 {
 	const char *src = ptr;
