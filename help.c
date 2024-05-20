@@ -43,6 +43,7 @@ static char *help_msg[] = {
     "Where option is one of ([] implies optional text):\n",
     opt_delim,"[no]output", "[=name]	- name object file\n",
     opt_delim,"[no]list",   "[=name]	- select and name listing file\n",
+	opt_delim,"[no]toc",    "[=name]		- enable the creation and name of table of contents file (see below)\n",
 	opt_delim,"[no]ide_error_syntax",
                             "   - Output error messages in a syntax suitable for use by an IDE.\n",
     opt_delim,"[no]ignore", "	        - Ignore the assembler directives not implemented in this version\n",
@@ -77,7 +78,7 @@ static char *help_msg[] = {
     opt_delim,"symbol","=length		- set maximum length of symbols (6 <= n <= 16)\n",
     opt_delim,"opcode","=length		- set maximum length of opcodes/macros (6 <= n <= 16)\n",
     "Options may be abbreviated to 1 or more characters and are case insensitive\n",
-    "Defaults are ",opt_delim,"out ",opt_delim,"nolist ",opt_delim,"sym=",
+    "Defaults are ",opt_delim,"out ",opt_delim,"nolist ",opt_delim,"notoc ",opt_delim,"sym=",
     (char *)&help_symbol_length," ",opt_delim,"opc=",(char *)&help_opcode_length," ",
 	opt_delim,"noignore ",
 #if !defined(MAC_PP)
@@ -104,7 +105,10 @@ static char *help_msg[] = {
 #else
     "output",
 #endif
-    " file with a file type of ",UPC,def_lis,"\n",
+    " file with a file type of ",UPC,def_lis,".\n",
+	"If a ",opt_delim,"toc is provided without a ",opt_delim,"list the listing will contain only the table of contents.\n"
+	"If both ",opt_delim,"list and ",opt_delim,"toc options are provided the table of contents will be included\n"
+	"at the head of the listing file.\n",
     (char *)0};
 
 int display_help(void)

@@ -19,6 +19,14 @@
  * Macxx - Generic macro assembler. Initially built to compile 6502 code
  *
  */
+
+/******************************************************************************
+Change Log
+
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG 
+
+******************************************************************************/
+
 #include "token.h"
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -429,6 +437,8 @@ int main(int argc, char *argv[])
 			}
 			current_fnd->fn_file = NULL;
 			current_fnd->fn_line = 0;
+			list_toc_line_no = 0;		/* By TRG 20240503 to support TOC */
+			list_toc_page_no = 1;		/* By TRG 20240503 to support TOC */
 			if (include_level > 0)
 				--include_level;
 			if (!(current_fnd=current_fnd->fn_next))
@@ -467,7 +477,7 @@ int main(int argc, char *argv[])
 #endif
     if (output_files[OUT_FN_LIS].fn_present)
     {
-        if (!(lis_fp = fopen(output_files[OUT_FN_LIS].fn_buff,"w")))
+        if (!(lis_fp = fopen(output_files[OUT_FN_LIS].fn_buff,"w+")))	/* TRG 20240503 to support TOC */
         {
             sprintf(emsg,"Error creating LIS file: %s\n",
                     output_files[OUT_FN_LIS].fn_buff);
@@ -479,6 +489,16 @@ int main(int argc, char *argv[])
     else
     {
         list_init(0);
+    }
+    if (output_files[OUT_FN_TOC].fn_present)
+    {  /* By TRG 20240503 to support TOC */
+    	if (!(toc_fp = fopen(output_files[OUT_FN_TOC].fn_buff,"w")))
+    	{
+    		sprintf(emsg,"Error creating TOC file: %s\n",
+    			output_files[OUT_FN_TOC].fn_buff);
+    		perror(emsg);
+    		EXIT_FALSE;
+    	}
     }
     if (output_files[OUT_FN_OBJ].fn_present)
     {
@@ -704,7 +724,39 @@ int main(int argc, char *argv[])
             err_msg(MSG_WARN,"No object file produced");
         }
     }
-    if (lis_fp) fclose(lis_fp);
+    if (toc_fp)
+    {  /* By TRG 20240503 to support TOC */
+    	fprintf(toc_fp, "\n");
+    	if (lis_fp)
+    	{ /* If LIST file and TOC file - append LIST file to end of TOC file */
+    		fflush(lis_fp);		/* files have not been closed so write out rest of files */
+    		fflush(toc_fp);
+    		rewind(lis_fp);		/* back to the beginning of list file */
+    		while( fgets(list_stats.listBuffer, sizeof(list_stats.listBuffer), lis_fp) != NULL )
+    		{  /* Can use listBuffer now that it's not needed any longer */
+    			fputs(list_stats.listBuffer,toc_fp);
+    		}
+    		fclose(lis_fp);
+    		fclose(toc_fp);
+    		if (unlink(output_files[OUT_FN_LIS].fn_buff) < 0)
+    		{  /* Delete current LIST file */
+    			sprintf(inp_str,"Error deleting file: %s\n",output_files[OUT_FN_LIS].fn_buff);
+    			perror(inp_str);
+    		}
+    		else
+    		{  /* Rename appended TOC file and move to current location of LIST file */
+    			rename(output_files[OUT_FN_TOC].fn_buff,output_files[OUT_FN_LIS].fn_buff);
+    		}
+    	}
+    	else
+    	{  /* No LIST file so keep TOC file */
+    		fclose(toc_fp);
+    	}
+    }
+    else if (lis_fp)
+    { /* No TOC file so keep LIST file */
+    	fclose(lis_fp);
+    }
     if (deb_fp) fclose(deb_fp);
     if (squeak) printf("A total of %ld statements were processed\n",record_count);
 #ifdef VMS

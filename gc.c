@@ -15,6 +15,14 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+/******************************************************************************
+Change Log
+
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG 
+
+******************************************************************************/
+
 /**************************************************************************
  *
  * This module (wholly) contains the code to obtain the command string from
@@ -89,6 +97,7 @@ static int cmd_includes_index;
 #define ide_desc	qual_tbl[QUAL_IDE_SYNTAX]
 #define obj_desc	qual_tbl[QUAL_OUTPUT]
 #define lis_desc	qual_tbl[QUAL_LIST]
+#define toc_desc	qual_tbl[QUAL_TOC]	/* By TRG 20240503 to support TOC */
 #define deb_desc	qual_tbl[QUAL_DEBUG]
 #define syml_desc	qual_tbl[QUAL_SYML]
 #define opcl_desc	qual_tbl[QUAL_OPCL]
@@ -113,6 +122,7 @@ int output_mode;        /* output mode */
 #define DEFTYP(nam,string) char nam[] = {string};
 
 DEFTYP(def_lis,".lis")
+DEFTYP(def_toc,".toc")		/* By TRG 20240503 to support TOC */
 DEFTYP(def_mac,".mac")
 DEFTYP(def_MAC,".MAC")
 #if !defined(MAC_PP)
@@ -146,6 +156,7 @@ static struct
 #ifndef lint
     {qual_tbl+QUAL_OUTPUT,DEF_OUT},  /* /OBJECT=filename */
     {qual_tbl+QUAL_LIST,def_lis},    /* /LIS=filename */
+    {qual_tbl+QUAL_TOC,def_toc},    /* /TOC=filename By TRG 20240503 to support TOC */
 #if !defined(MAC_PP)
     {qual_tbl+QUAL_TEMP,def_tmp},    /* /TEMP=filename */
     {qual_tbl+QUAL_DEBUG,def_od}     /* /DEBUG=filename */
@@ -298,7 +309,7 @@ static int process_outfile(FN_struct *fnd, struct qual *desc_ptr, char **defname
             if (outn == OUT_FN_TMP)
             {
 #if 1
-                err_msg( MSG_FATAL, "Sorry, TEMP option is no longer supported\n" );
+                err_msg( MSG_FATAL, "Sorry, TEMP option is no longer supported, did you mean TOC\n" );	/* By TRG 20240503 to support TOC */
                 return 1;
 #else
                 strcpy( temp_filename, "MACXXXXXX" );

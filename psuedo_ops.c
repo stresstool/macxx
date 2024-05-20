@@ -19,6 +19,8 @@
 /******************************************************************************
 Change Log
 
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG
+
 	08-26-2023	- Cleaned up .ASCII, .ASCIIZ, .ASCIN and .STRING code
 
 	08-23-2023	- Fix to .ASCII, .ASCIIZ, .ASCIN and .STRING not handling
@@ -44,6 +46,7 @@ Change Log
 	01-05-2022	- Added support for the .RAD50 command by Tim Giddens.
 
 ******************************************************************************/
+
 #include "add_defs.h"
 #include "token.h"
 #include "pst_tokens.h"
@@ -90,8 +93,8 @@ int op_title(void)
 			++len;
 		}
 		if ( !(c = lis_title[0]) )
-			c = '\r';
-		snprintf(lis_title, sizeof(lis_title), "%c%-40s %s %s   %s\n",
+			c = '\f';
+		snprintf(lis_title, sizeof(lis_title), "%c%-40s %s %s   %s",
 				 c, " ", macxx_name, macxx_version, ascii_date);
 		if ( len > (int)sizeof(lis_title) - 3 )
 			len = sizeof(lis_title) - 3;
@@ -122,6 +125,14 @@ int op_sbttl(void)
 		*s++ = '\n';
 		*s++ = '\n';
 		*s = 0;
+	}
+	if ( (options[QUAL_TOC] && options[QUAL_LIST] && list_toc) || (options[QUAL_TOC] && !options[QUAL_LIST]) )
+	{  /* By TRG 20240503 to support TOC */
+		if (pass !=0)
+		{
+			fprintf(toc_fp,"%5ld-%4ld%c",list_toc_page_no,list_toc_line_no,(include_level > 0) ? '+' : ' ');
+			fprintf(toc_fp, "%c%s",(include_level > 0) ? '\t' : ' ',inp_ptr);
+		}
 	}
 	f1_eatit();
 	return 0;
@@ -2045,6 +2056,11 @@ int op_page(void)
 {
 	show_line = 0;       /* don't display .page */
 	lis_line = 0;
+	if ( options[QUAL_TOC] )	/* By TRG 20240503 to support TOC */
+	{
+		++list_toc_page_no;
+		list_toc_line_no = 0;
+	}
 	return 0;
 }
 
@@ -2312,6 +2328,15 @@ int op_include(void)
 	current_fnd->macro_level = macro_level;
 	macro_level = 0;
 	current_fnd = tfnd;
+	if ( (options[QUAL_TOC] && options[QUAL_LIST] && list_toc) || (options[QUAL_TOC] && !options[QUAL_LIST]) )
+	{  /* By TRG 20240503 to support TOC */
+		if (pass !=0)
+		{
+			fprintf(toc_fp,"%5ld-%4ld \t",list_toc_page_no,list_toc_line_no);	/* write page and line number */
+			fprintf(toc_fp, "%s",current_fnd->fn_name_only);			/* write include filename */
+			fprintf(toc_fp, "\t%s",inp_ptr);					/* write rest of .include line */
+		}
+	}
 	if ( squeak )
 		printf("Processing file %s\n", current_fnd->fn_buff);
 #if !defined(MAC_PP)

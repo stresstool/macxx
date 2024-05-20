@@ -15,6 +15,14 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+/******************************************************************************
+Change Log
+
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG 
+
+******************************************************************************/
+
 #include "token.h"		/* define compile time constants */
 #include "pst_tokens.h"
 #include "listctrl.h"
@@ -334,7 +342,7 @@ gt_loop:
 	inp_ptr = inp_str;
     if (macro_level == 0)
     {
-        ++current_fnd->fn_line;   /* increment the source line # */
+/*        ++current_fnd->fn_line; */  /* increment the source line # */
         inp_len = 0;      /* no length so far */
         while (1)
         {
@@ -395,6 +403,9 @@ gt_loop:
 #if !defined(MAC_PP)
         if (options[QUAL_DEBUG]) dbg_line(0);
 #endif
+/* must be here incase end of file return - should not be incremented - By TRG 20240503 to support TOC */
+        ++current_fnd->fn_line;		/* increment the source line # */
+        ++list_toc_line_no;		/* increment the TOC source line number */
     }
     else
     {
@@ -629,19 +640,34 @@ gt_loop:
 
 char lis_title[LIS_TITLE_LEN], lis_subtitle[LIS_TITLE_LEN];
 
-void puts_titles(void)
+void puts_titles(int plus_sign)
 {
 	fputs(lis_title,lis_fp);      /* write title line */
-	 if (!lis_subtitle[0])
-	 {
-		 fputs("\n\n",lis_fp);      /* no subtitle yet */
-	 }
-	 else
-	 {
-		 fputs(lis_subtitle,lis_fp);    /* write subtitle line */
-	 }
-	 lis_line = LIS_LINES_PER_PAGE-3;          /* reset the line counter */
-	 *lis_title = '\f';        /* make first char a FF */
+
+	if ( options[QUAL_TOC] )		/* By TRG 20240503 to support TOC */
+	{
+		if (!list_toc_hd)		/* write TOC header only one time */
+		{
+			fputs(lis_title,toc_fp);			/* write title header to TOC file */
+			fprintf(toc_fp,"\nTABLE OF CONTENTS\n\n");
+			list_toc_hd = 1;
+		}
+		fprintf(lis_fp," PAGE %ld%c\n",list_toc_page_no,(plus_sign > 0) ? '+' : ' ');	/* Page number for listing file */
+	}
+	else
+	{
+		fprintf(lis_fp,"\n");
+	}
+	if (!lis_subtitle[0])
+	{
+		fputs("\n\n",lis_fp);      /* no subtitle yet */
+	}
+	else
+	{
+		fputs(lis_subtitle,lis_fp);    /* write subtitle line */
+	}
+	lis_line = LIS_LINES_PER_PAGE-3;          /* reset the line counter */
+	*lis_title = '\f';        /* make first char a Form Feed */
 }
 
 /**************************************************************************
@@ -654,19 +680,19 @@ void puts_lis(const char *string, int lines )
  *	lines - number of lines in the text (0=don't know how many)
  */
 {
-    int i;
-    const char *s;
-    if (lis_fp == 0)
+	int i;
+	const char *s;
+	if (lis_fp == 0)
 		return;     /* easy out if no lis file */
-    if (!lis_title[0])
-    {
-        snprintf(lis_title,sizeof(lis_title),"\r%-40s %s %s   %s\n",
-                output_files[OUT_FN_OBJ].fn_name_only,
-                macxx_name,macxx_version,ascii_date);
-    }
-    if ((i=lines) == 0)
-    {
-        if ((s = string) != 0 )			   /* point to string */
+	if (!lis_title[0])
+	{
+		snprintf(lis_title,sizeof(lis_title),"\f%-40s %s %s   %s",
+			output_files[OUT_FN_OBJ].fn_name_only,
+			macxx_name,macxx_version,ascii_date);
+	}
+	if ((i=lines) == 0)
+	{
+		if ((s = string) != 0 )			   /* point to string */
 		{
 			while (*s)
 			{
@@ -674,17 +700,31 @@ void puts_lis(const char *string, int lines )
 					i++;  /* count \n's in text */
 			}
 		}
-    }
-    if (i == 0 || i > lis_line)
-    {    /* room on page? */
-		puts_titles();
-    }
-    if (i != 0)
-    {
-        fputs(string,lis_fp);     /* write caller's text */
-        lis_line -= i;            /* take lines from total */
-    }
-    return;              /* done */
+	}
+	if ( options[QUAL_TOC] )		/* By TRG 20240503 to support TOC */
+	{
+		if (list_toc_line_no == 1)		/* New page number ? */
+		{
+			puts_titles(0);		/* print without plus sign */
+		}
+		else if (i == 0 || i > lis_line)
+		{    /* room on page? */
+			puts_titles(1);		/* print with plus sign */
+		}
+	}
+	else
+	{
+		if (i == 0 || i > lis_line)
+		{    /* room on page? */
+			puts_titles(1);		/* print with plus sign */
+		}
+	}
+	if (i != 0)
+	{
+		fputs(string,lis_fp);     /* write caller's text */
+		lis_line -= i;            /* take lines from total */
+	}
+	return;              /* done */
 }
 
 /******************************************************************/

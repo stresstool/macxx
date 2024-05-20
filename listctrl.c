@@ -19,14 +19,21 @@
 /******************************************************************************
 Change Log
 
-	03/26/2022	- Changed added support for MAC69  - Tim Giddens
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG 
+
+	01/24/2022	- Changed - Added support for HLLxxF  - TG
 
 ******************************************************************************/
+
 #include "token.h"
 #include "listctrl.h"
 #include "memmgt.h"
 #include "exproper.h"
 #include "utils.h"
+
+unsigned long list_toc_page_no = 1;		/* page number of TOC listing - By TRG 20240503 */
+unsigned long list_toc_line_no = 0;		/* line number of TOC listing - By TRG 20240503 */
+int list_toc_hd = 0;				/* header flag for TOC listing - By TRG 20240503 */
 
 int show_line = 1;
 int list_level;
@@ -631,8 +638,16 @@ void display_line(LIST_stat_t *lstat)
 	{
 		if ( lstat->line_no != 0 )
 		{
-			sprintf(outLinePtr + LLIST_SEQ, "%5ld%c",
+			if ( options[QUAL_TOC] )		/* By TRG 20240503 to support TOC */
+			{
+				sprintf(outLinePtr + LLIST_SEQ, "%5ld%c",
+					list_toc_line_no, (lstat->include_level > 0) ? '+' : ' ');
+			}
+			else
+			{
+				sprintf(outLinePtr + LLIST_SEQ, "%5ld%c",
 					lstat->line_no, (lstat->include_level > 0) ? '+' : ' ');
+			}
 		}
 	}
 #ifndef MAC_PP

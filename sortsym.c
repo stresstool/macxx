@@ -15,6 +15,14 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+/******************************************************************************
+Change Log
+
+    05/09/2024	- Bug Fix - lis_subtitle for "Segment Summary" missing NewLine  - TRG
+
+******************************************************************************/
+
 #include "token.h"
 #include "exproper.h"
 #include "listctrl.h"
@@ -307,7 +315,7 @@ int sort_symbols(void)
     {
         int seg_num;
         SEG_struct **spp,*seg_ptr;
-        strncpy(lis_subtitle,"Segment summary",sizeof(lis_subtitle));
+        strncpy(lis_subtitle,"Segment Summary\n",sizeof(lis_subtitle));		/* Bug Fix - Added newline TRG 20240503 */
 		if ( list_radix == 8 )
 		{
 			puts_lis("\nSegment summary:\n"

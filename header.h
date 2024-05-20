@@ -16,6 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/******************************************************************************
+Change Log
+
+	05-03-2024	- TRG - Added support for TOC (Table of contents) file
+
+******************************************************************************/
+
 #ifndef _HEADER_H_
 #define _HEADER_H_ 1
 
@@ -90,6 +97,7 @@ extern int out_dbgfname(FILE *fp, FN_struct *odfp);
 extern FILE *outxsym_fp;
 
 #define lis_fp output_files[OUT_FN_LIS].fn_file
+#define toc_fp output_files[OUT_FN_TOC].fn_file		/* By TRG 20240503 to support TOC */
 #define obj_fp output_files[OUT_FN_OBJ].fn_file
 #define tmp_fp output_files[OUT_FN_TMP].fn_file
 #define deb_fp output_files[OUT_FN_DEB].fn_file
@@ -170,7 +178,7 @@ extern int error_count[];
 extern char lis_title[LIS_TITLE_LEN];
 extern char lis_subtitle[LIS_TITLE_LEN];
 extern char ascii_date[];
-extern void puts_titles(void);
+extern void puts_titles(int plus_sign);		/* By TRG 20240503 to support TOC */
 
 #include "memmgt.h"
 

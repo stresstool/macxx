@@ -16,6 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/******************************************************************************
+Change Log
+
+	05-03-2024	- TRG - Added support for TOC (Table of contents) file
+
+******************************************************************************/
+
 #ifndef _TOKEN_DEFS_H_
 #define _TOKEN_DEFS_H_ 1
 
@@ -100,6 +107,7 @@ enum misc {
 
    OUT_FN_OBJ =0,	/* indicies into the output fn_struct table */
    OUT_FN_LIS,
+   OUT_FN_TOC,		/* By TRG 20240503 to support TOC */
    OUT_FN_TMP,
    OUT_FN_DEB,
    OUT_FN_MAX,

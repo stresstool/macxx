@@ -19,7 +19,9 @@
 /******************************************************************************
 Change Log
 
-    01/24/2022	- Changed - Added support for HLLxxF  - Tim Giddens
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG 
+
+	01/24/2022	- Changed - Added support for HLLxxF  - Tim Giddens
 
 ******************************************************************************/
 
@@ -53,6 +55,11 @@ typedef struct
    int getting_stuff;				/* flag indicating accumulating stuff to print */
    int has_stuff;					/* flag indicating has some stuff to print */
 } LIST_stat_t;
+
+
+extern unsigned long list_toc_page_no;			/* page number of TOC listing - By TRG 20240503 */
+extern unsigned long list_toc_line_no;			/* line number of TOC listing - By TRG 20240503 */
+extern int list_toc_hd;					/* header flag for TOC listing - By TRG 20240503 */
 
 extern LIST_Source_t list_source;
 extern LIST_stat_t list_stats;

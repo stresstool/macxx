@@ -16,6 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/******************************************************************************
+Change Log
+
+	05-03-2024	- TRG - Added support for TOC (Table of contents) file
+
+******************************************************************************/
+
 /**************************************************************
  * Warning, there needs to be a comma at the end of each line
  * except the last one......
@@ -40,6 +47,7 @@ QTBL(0, 1, 1, 0, 0, 1, QUAL_TEMP,	"TEMPFILE", 0),		/* use temp files */
 QTBL(1, 0, 0, 0, 0, 1, QUAL_IDE_SYNTAX,	"IDE_ERROR_SYNTAX", 0),		/* output error messages in IDE syntax */
 QTBL(0, 1, 0, 1, 0, 1, QUAL_OUTPUT,	"OUTPUT", OUT_FN_OBJ),	/* object file description */
 QTBL(0, 1, 0, 1, 0, 1, QUAL_LIST,	"LIST", OUT_FN_LIS),	/* list file description */
+QTBL(0, 1, 0, 1, 0, 1, QUAL_TOC,	"TOC", OUT_FN_TOC),	/* toc file description By TRG 20240503 to support TOC */
 QTBL(0, 1, 0, 1, 0, 1, QUAL_DEBUG,	"DEBUG", OUT_FN_DEB),	/* debug file description */
 QTBL(0, 0, 1, 0, 0, 0, QUAL_SYML,	"SYMBOL_LENGTH", 0),	/* significant length of symbols */
 QTBL(0, 0, 1, 0, 0, 0, QUAL_OPCL,	"OPCODE_LENGTH", 0),	/* significant length of opcodes */
