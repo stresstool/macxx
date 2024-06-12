@@ -1058,7 +1058,10 @@ int op_ascin(void)
 
 int op_string(void)
 {
-	ascii_common(ASC_COMMON_ESCAPES);
+	int t;
+	ascii_common(ASC_COMMON_ESCAPES|ASC_COMMON_NULL);
+	t = (1 << current_section->seg_dalign); /* assume default */
+	current_offset = (current_offset + (t - 1)) & -t;
 	return 0;
 }
 
