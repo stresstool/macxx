@@ -19,6 +19,9 @@
 /******************************************************************************
 Change Log
 
+	06-12-2024	- Changed support for .string to include handling of 'C'
+				string escape sequences. DMS
+				
 	05-03-2024	- Added support for TOC (Table of contents) file - TRG
 
 	08-26-2023	- Cleaned up .ASCII, .ASCIIZ, .ASCIN and .STRING code
@@ -762,15 +765,15 @@ static void ascii_common(int arg)
 					}
 				}
 				/* If reached true end of data fix last byte for .ASCIN and .ASCIZ */
-				if ( (arg == ASC_COMMON_NULL || arg == ASC_COMMON_MINUS)
+				if (    (arg&(ASC_COMMON_NULL|ASC_COMMON_MINUS))
 					 && (cttbl[(int)*inp_ptr] & (CT_EOL | CT_SMC)) != 0 )
 				{
-					if ( arg == ASC_COMMON_NULL )
+					if ( (arg&ASC_COMMON_NULL) )
 					{      /* .ASCIZ */
 						*asc_ptr++ = 0;   /* null terminate the string */
 						++len;        /* add 1 char */
 					}
-					if ( arg == ASC_COMMON_MINUS )
+					if ( (arg&ASC_COMMON_MINUS) )
 					{      /* .ASCIN */
 						/*	04-16-2022 - TG
 							This is not correct but it's the way the old version
@@ -850,7 +853,7 @@ static void ascii_common(int arg)
 			}              /* -- something to write (len > 0) */
 			if ( !fake )
 			{
-				if ( arg != ASC_COMMON_COMMA && term_c == expr_open )   /* fix for variable function */
+				if ( !(arg&ASC_COMMON_COMMA) && term_c == expr_open )   /* fix for variable function */
 				{    /* have an expression? */
 					char *ip, s1, s2, *strt;
 					int nst, val, abs;
@@ -909,7 +912,7 @@ static void ascii_common(int arg)
 							++inp_ptr; /* eat ws */
 					}
 
-					if ( arg == 2 && (cttbl[(int)*inp_ptr] & (CT_EOL | CT_SMC)) != 0 )
+					if ( (arg&ASC_COMMON_MINUS) && (cttbl[(int)*inp_ptr] & (CT_EOL | CT_SMC)) != 0 )
 					{
 						if ( EXP0.ptr == 1 &&
 							 exp_ptr->expr_code == EXPR_VALUE )
@@ -980,7 +983,7 @@ static void ascii_common(int arg)
 						EXP0.tag_len = 1;
 						write_to_tmp(TMP_EXPR, 0, &EXP0, 0);
 					}
-					if ( arg == 1 && (cttbl[(int)*inp_ptr] & (CT_EOL | CT_SMC)) != 0 )
+					if ( (arg&ASC_COMMON_NULL) && (cttbl[(int)*inp_ptr] & (CT_EOL | CT_SMC)) != 0 )
 					{
 						static char zero = 0;
 						if ( show_line && list_bin )
@@ -1025,7 +1028,7 @@ static void ascii_common(int arg)
 			bad_token(inp_ptr, "No matching delimiter");
 			break;
 		}
-		if ( arg == ASC_COMMON_COMMA || (cttbl[(int)*inp_ptr] & (CT_EOL | CT_SMC)) != 0 )
+		if ( (arg&ASC_COMMON_COMMA) || (cttbl[(int)*inp_ptr] & (CT_EOL | CT_SMC)) != 0 )
 			break;
 	}                    /* -- for all items in inp_str */
 	out_pc = current_offset;
