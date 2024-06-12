@@ -555,10 +555,11 @@ The most inner loop handles filling the buffer with input data.
 
 ************************************************************/
 
-		#define ASC_COMMON_NONE  (0)
-		#define ASC_COMMON_NULL  (1)
-		#define ASC_COMMON_MINUS (2)
-		#define ASC_COMMON_COMMA (3)
+		#define ASC_COMMON_NONE		(0x00)
+		#define ASC_COMMON_NULL		(0x01)
+		#define ASC_COMMON_MINUS	(0x02)
+		#define ASC_COMMON_COMMA	(0x04)
+		#define ASC_COMMON_ESCAPES	(0x08)
 
 static void ascii_common(int arg)
 {
@@ -625,7 +626,103 @@ static void ascii_common(int arg)
 				}
 				/* Allows a three digit octal number to be entered within the delimiters
 				   example:  \377 would be FF hex -  /ABC\377DEF/    */
-				if ( c == '\\' &&
+				if ( c == '\\' && (arg&ASC_COMMON_ESCAPES) )
+				{
+					unsigned char whatToPass=inp_ptr[1];
+					/* Allows for standard 'C' string escape processing */
+					switch (whatToPass)
+					{
+					case 'a':	/* alert/bell */
+						whatToPass = '\a';
+						break;
+					case 'b':	/* backspace */
+						whatToPass = '\b';
+						break;
+					case 'e':	/* escape */
+						whatToPass = 033;
+						break;
+					case 'f':	/* formfeed */
+						whatToPass = '\f';
+						break;
+					case 'n':	/* newline */
+						whatToPass = '\n';
+						break;
+					case 'r':	/* carriage return */
+						whatToPass = '\r';
+						break;
+					case 't':	/* tab */
+						whatToPass = '\t';
+						break;
+					case 'v':	/* vertical tab */
+						whatToPass = '\v';
+						break;
+					case '\\':	/* backslash */
+						whatToPass = '\\';
+						break;
+					case '\'':	/* apostrohpe */
+						whatToPass = '\'';
+						break;
+					case '"':	/* double quote */
+						whatToPass = '"';
+						break;
+					case '?':	/* question mark */
+						whatToPass = '?';
+						break;
+					case 'x':	/* hex number */
+						{
+							unsigned long val=0;
+							char *iptr = inp_ptr+2;
+							while ( 1 )
+							{
+								char ch0;
+								ch0 = *iptr;
+								if ( islower(ch0 ) )
+									ch0 = toupper(ch0);
+								if ( (ch0 >= '0' && ch0 <= '9') )
+								{
+									val <<= 4;
+									val |= ch0 - '0';
+								}
+								else if ( (ch0 >= 'A' && ch0 <= 'F') )
+								{
+									val <<= 4;
+									val |= 10 + ch0 - 'A';
+								}
+								else
+									break;
+								++iptr;
+							}
+							if ( iptr > inp_ptr+2 )
+							{
+								whatToPass = val&0xFF;
+								inp_ptr = iptr-2;
+							}
+						}
+						break;
+					case '0':
+					case '1':
+					case '2':
+					case '3':	/* octal number */
+						if (    (inp_ptr[2] >= '0' && inp_ptr[2] <= '7')
+						     && (inp_ptr[3] >= '0' && inp_ptr[3] <= '7')
+						   )
+						{
+							whatToPass = ((whatToPass - '0') << 6) | ((inp_ptr[2] - '0') << 3) | (inp_ptr[3] - '0');
+							inp_ptr += 2;
+						}
+						break;
+#if 0
+					/* should also handle unicode here. Not going to */
+					case 'u':
+					case 'U':
+#endif
+					default:
+						break;
+					}
+					*asc_ptr++ = whatToPass;
+					inp_ptr += 2;
+				}
+				else if ( c == '\\' &&
 					 (inp_ptr[1] >= '0' && inp_ptr[1] <= '3') &&
 					 (inp_ptr[2] >= '0' && inp_ptr[2] <= '7') &&
 					 (inp_ptr[3] >= '0' && inp_ptr[3] <= '7')
@@ -953,6 +1050,12 @@ int op_asciz(void)
 int op_ascin(void)
 {
 	ascii_common(ASC_COMMON_MINUS);
+	return 0;
+}
+
+int op_string(void)
+{
+	ascii_common(ASC_COMMON_ESCAPES);
 	return 0;
 }
 
