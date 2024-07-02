@@ -1040,7 +1040,7 @@ static void ascii_common(int arg)
 
 int op_ascii(void)
 {
-	ascii_common(ASC_COMMON_NONE);
+	ascii_common(ASC_COMMON_ESCAPES|ASC_COMMON_NONE);
 	return 0;
 }
 
@@ -1058,10 +1058,15 @@ int op_ascin(void)
 
 int op_string(void)
 {
-	int t;
 	ascii_common(ASC_COMMON_ESCAPES|ASC_COMMON_NULL);
-	t = (1 << current_section->seg_dalign); /* assume default */
-	current_offset = (current_offset + (t - 1)) & -t;
+#if 0
+	{
+		/* What is this all about? Do not believe there is a requirement for alignment */
+		int t;
+		t = (1 << current_section->seg_dalign); /* assume default */
+		current_offset = (current_offset + (t - 1)) & -t;
+	}
+#endif
 	return 0;
 }
 
