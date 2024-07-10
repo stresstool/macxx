@@ -2412,7 +2412,7 @@ void pass1( int fileNumber)
                             {
                                 --old_nest;
                             }
-                            if ((opc->op_class&(~DFLCND)) == 0)
+                            if ((opc->op_class&(~(DFLCND|DFLPARAM))) == 0)
                             {
                                 sprintf(list_stats.listBuffer+LLIST_CND,"(%d)",old_nest);
                             }

@@ -1775,40 +1775,36 @@ static unsigned long op_ifcondit(char *condition)
 int op_if(void)
 {
 	unsigned long retv = 0;
+	unsigned long old_edmask;
 	int tt;
 
 	if ( condit_word < 0 )
 	{   /* if currently an unsatisfied conditional */
-		++condit_level;       /* just bump the conditional level */
-		f1_eatit();       /* eat the rest of the line */
-		return 0;         /* and exit */
+	    ++condit_level;       /* just bump the conditional level */
+	    f1_eatit();       /* eat the rest of the line */
+	    return 0;         /* and exit */
 	}
-	else
+	if ( condit_nest >= 31 )
 	{
-		unsigned long old_edmask;
-		old_edmask = edmask;
-		edmask &= ~(ED_LC | ED_DOL);
-		tt = get_token();
-		edmask = old_edmask;
-		if ( tt != TOKEN_strng )
-		{
-			bad_token(tkn_ptr, "Invalid conditional argument");
-			retv = 0x80000000L;
-		}
-		else if ( condit_nest > 31 )
-		{  /* room for another condition? */
-			bad_token(tkn_ptr, "Cannot nest conditionals more than 31 levels");
-		}
+	    bad_token(tkn_ptr, "Cannot nest conditionals more than 31 levels");
+	    f1_eatit();
+	    return 0;
 	}
-	if ( *inp_ptr == ',' )
+	old_edmask = edmask;
+	edmask &= ~(ED_LC | ED_DOL);	/* Make sure we upcase the condition argument */
+	tt = get_token();
+	edmask = old_edmask;
+	if ( tt != TOKEN_strng )
+	{
+	    bad_token(tkn_ptr, "Invalid conditional argument");
+	    f1_eatit();		/* Ignore the rest of the line */
+	    retv = 0x80000000L;	/* make the condition not true no matter */
+	}
+	else 
+	{
+	    if ( *inp_ptr == ',' )	/* eat any optional comma */
 		++inp_ptr;
-	if ( retv == 0 )
-	{
-		retv = op_ifcondit(token_pool);
-	}
-	else
-	{
-		f1_eatit();       /* else eat the line */
+	    retv = op_ifcondit(token_pool);	/* Process the conditional */
 	}
 	++condit_nest;       /* bump the nest level */
 	++condit_level;      /* and the level */
@@ -1827,18 +1823,13 @@ int op_ifall(Opcode *opc)
 		f1_eatit();       /* eat the rest of the line */
 		return 0;         /* and exit */
 	}
-	else if ( condit_nest > 31 )
+	if ( condit_nest >= 31 )
 	{  /* room for another condition? */
-		bad_token(tkn_ptr, "Cannot nest conditionals more than 32 levels");
+		bad_token(tkn_ptr, "Cannot nest conditionals more than 31 levels");
+		f1_eatit();
+		return 0;
 	}
-	if ( retv == 0 )
-	{
-		retv = op_ifcondit(opc->op_name + 3);
-	}
-	else
-	{
-		f1_eatit();       /* eat the line */
-	}
+	retv = op_ifcondit(opc->op_name + 3);
 	++condit_nest;       /* bump the nest level */
 	++condit_level;      /* and the level */
 	condit_word = ((unsigned long)condit_word >> 1) | retv;

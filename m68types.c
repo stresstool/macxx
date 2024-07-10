@@ -124,7 +124,7 @@ static int get_indxea(int amflg, int treg, EA *amp )
 			tmps->ptr = compress_expr(tmps);
 		if ( tmps->ptr != 1 || exp->expr_code != EXPR_VALUE )
 			{
-				exp = tmps->stack + tmps->ptr;
+				exp += tmps->ptr;
 				exp->expr_code = EXPR_SEG;
 				exp->expr_value = current_offset+2;
 	/*			printf("In get_indexea(). current_offset=0x%08lX\n", current_offset ); */
@@ -134,6 +134,7 @@ static int get_indxea(int amflg, int treg, EA *amp )
 				tmps->ptr += 2;
 				tmps->ptr = compress_expr(tmps);
 				if (list_bin) compress_expr_psuedo(tmps);
+                exp = tmps->stack;
 			}
 		}
 		if ( tmps->ptr == 1 && exp->expr_code == EXPR_VALUE )
@@ -221,11 +222,11 @@ static int get_mitsyntax( int areg, EA *amp )
         amp->mode = E_PCR;
         amp->eamode = Ea_PCR;
 		eps->ptr = compress_expr(eps);
-		exp = eps->stack+eps->ptr;
+		exp = eps->stack;
 		if ( eps->ptr != 1 || exp->expr_code != EXPR_VALUE )
 		{
 			epsTag = 'I';  /* displacements are signed shorts */
-			exp = eps->stack + eps->ptr;
+			exp += eps->ptr;
 			exp->expr_code = EXPR_SEG;
 			exp->expr_value = current_offset+2;
 /*			printf("In get_mitsyntax(). current_offset=0x%08lX\n", current_offset ); */
@@ -264,7 +265,7 @@ static int get_regea(int amflg, EA *amp )
     /* or all permutations of r@ */
     /* eps has either r or num */
     cp = inp_ptr;
-    M68DBG(("Reached get_regea. amflg=%d. tkn_ptr='%s', inp_ptr='%s'\n", amflg, tkn_ptr, inp_ptr ));
+    M68DBG(("get_regea(): amflg=0x%X. tkn_ptr='%s', inp_ptr='%s'\n", amflg, tkn_ptr, inp_ptr ));
     if ( (amflg&AMFLG_DISPLAC) )
     {
         /* Could be num(r) or (num,r) or num(r,x) or (num,r,x) */
@@ -298,14 +299,17 @@ static int get_regea(int amflg, EA *amp )
             return ONEEA_RET_FAIL;
         }
         ++inp_ptr;              /* eat closing paren */
+	M68DBG(("get_regea(): 1. treg=0x%X(0%o) (pc=%s)\n", treg, treg, treg == REG_PC ? "Yes":"No" ));
         if (treg == REG_PC)
         {
             amp->mode = E_PCR;
             amp->eamode = Ea_PCR;
-			exp = eps->stack+eps->ptr;
+            exp = eps->stack;
+			M68DBG(("get_regea(): 2. eps->ptr=%d, exp->expr_code=0x%X\n", eps->ptr, exp->expr_code));
 			if ( eps->ptr != 1 || exp->expr_code != EXPR_VALUE )
 			{
-	
+			    M68DBG(("get_regea(): 3. Added 'offset+2 . -' to expression\n"));
+			    exp += eps->ptr;
 				epsTag = 'I';  /* displacements are signed shorts */
 				/* This one is for num(pc) or pc relative */
 				exp->expr_code = EXPR_SEG;
@@ -318,15 +322,18 @@ static int get_regea(int amflg, EA *amp )
 				eps->ptr = compress_expr(eps);
 				if (list_bin) compress_expr_psuedo(eps);
 			}
+			else
+			    M68DBG(("get_regea(): 4. Did NOT add 'offset+2 . -' to expression\n"));
         }
         else
         {
+	    M68DBG(("get_regea(): 5. treg is NOT PC. Simple dispacement, nothing special\n"));
             amp->mode = E_DSP;
             amp->eamode = Ea_DSP;
             amp->reg1 = treg&7;
         }
         eps->tag = epsTag;     /* displacements are signed words */
-        M68DBG(("At FIXME. treg=%d, ptr=%d, disp=%ld, tkn_ptr=%s",
+        M68DBG(("get_regea(): 6. treg=%d, ptr=%d, disp=%ld, tkn_ptr=%s",
                treg, eps->ptr, exp->expr_value, tkn_ptr ));
         return ONEEA_RET_SUCC;
     }
@@ -493,7 +500,7 @@ int get_oneea( EA *amp, int bwl )
     int amflg;
     char *cp;
 
-	M68DBG(("Made it to get_oneea. bwl=%d, tkn_ptr='%s', inp_ptr='%s'\n", bwl, tkn_ptr, inp_ptr));
+	M68DBG(("get_oneea(): Entry, bwl=%d, tkn_ptr='%s', inp_ptr='%s'\n", bwl, tkn_ptr, inp_ptr));
     while ((cttbl[(int)*inp_ptr]&CT_WS) != 0)
         ++inp_ptr;      /* Eat WS */
     if ((cttbl[(int)*inp_ptr]&(CT_EOL|CT_SMC)) != 0)
@@ -552,8 +559,8 @@ int get_oneea( EA *amp, int bwl )
     {
         return ONEEA_RET_FAIL;      /* Syntax error */
     }
-    M68DBG(("After exprs(). amflg=%d, register_reference=%d, ptr=%d, val=%ld, inp_ptr='%s'\n",
-            amflg, eps->register_reference, eps->ptr, exp->expr_value, inp_ptr ));
+    M68DBG(("get_oneea(): After exprs(). amflg=0x%X, register_reference=%d, ptr=%d, code[0]=0x%X, val[0]=%ld, inp_ptr='%s'\n",
+	    amflg, eps->register_reference, eps->ptr, exp->expr_code, exp->expr_value, inp_ptr));
     if ( eps->register_reference )
     {
         return get_regea(amflg,amp);    /* expression is a register */
@@ -582,15 +589,15 @@ int get_oneea( EA *amp, int bwl )
         inp_ptr = cp;       /* We need to rescan and redo the entire expression */
         eps->ptr = 0;
         get_token();                /* reprime the pump */
-        M68DBG(("Rescan: amflg=%d, token_pool=\"%s\", inp_ptr=%s",
+        M68DBG(("get_oneea(): Rescan: amflg=%d, token_pool=\"%s\", inp_ptr=%s",
                 amflg, token_pool, inp_ptr));
         if ( exprs(1,eps) < 0 )     /* reprocess the expression */
         {
-            M68DBG(("rescan exprs() failed. inp_ptr=%s", inp_ptr));
+            M68DBG(("get_oneea(): rescan exprs() failed. inp_ptr=%s", inp_ptr));
             return ONEEA_RET_FAIL;
         }
         amflg = 0;                  /* just cleanup */
-        M68DBG(("rescan exprs() success. ptr=%d, val=%ld, inp_ptr=%s",
+        M68DBG(("get_oneea(): rescan exprs() success. ptr=%d, val=%ld, inp_ptr=%s",
                 eps->ptr, exp->expr_value, inp_ptr));
     }
     eps->force_short |= eps->base_page_reference;
@@ -645,7 +652,7 @@ static int get_twoea(int bwl)
     if ((cttbl[(int)*inp_ptr]&(CT_EOL|CT_SMC)) == 0)
     {
         sts = get_oneea(&source,bwl);
-        M68DBG(("Made it to get_twoea(). Called get_oneea() which returned %d. Source reg=%d, eamode=%d, mode=%d. inp_ptr=%s\n",
+        M68DBG(("get_twoea(): Called get_oneea() which returned %d. Source reg=%d, eamode=%d, mode=%d. inp_ptr=%s\n",
                 sts, source.reg1, source.eamode, source.mode, inp_ptr ));
         if ( sts == ONEEA_RET_SUCC )
         {
@@ -655,7 +662,7 @@ static int get_twoea(int bwl)
                 sts = get_oneea(&dest,bwl);
                 if ( sts == ONEEA_RET_SUCC )
 				{
-					M68DBG(("After second call to get_oneea() returned %d. Dest reg=%d, eamode=%d, mode=%d. inp_ptr=%s\n",
+					M68DBG(("get_twoea(): After second call to get_oneea() returned %d. Dest reg=%d, eamode=%d, mode=%d. inp_ptr=%s\n",
 							sts, dest.reg1, dest.eamode, dest.mode, inp_ptr ));
 					return 1;
 				}
@@ -1595,6 +1602,7 @@ int type12(int inst, int bwl)
 int type13(int inst, int bwl)
 {
     EXP0SP->expr_value = 0x41c0;
+    M68DBG(("type13(): Entry\n"));
     if (get_twoea(bwl) == 0) return 0;
     if ((source.mode&(E_ATAn|E_DSP|E_NDX|E_ABS|E_PCR|E_PCN)) == 0)
     {
