@@ -944,9 +944,10 @@ the stack pointer on a named stack. Examples:
     <tr><td>&nbsp;&nbsp;&nbsp;.BYTE</td><td>Same as BYTE above.</td></tr>
     <tr><td>&nbsp;&nbsp;&nbsp;CPU_CHECK</td><td>Enables checks for behavior on different PDP11 CPU's. Specific to MAC11 only.</td></tr>
     <tr><td>&nbsp;&nbsp;&nbsp;CR</td><td>Enables carriage returns ('\r') in the source stream otherwise they terminate the line. <font color="red">WARNING:</font> Enabling this function will probably break the .IF BLANK and IDENTICAL conditionals.</td></tr>
-    <tr><td>&nbsp;&nbsp;&nbsp;DOLLAR_HEX</td><td>allows hexadecimal constants to be expressed Motorola style ($?=&gt;0x?)</td></tr>
+    <tr><td>&nbsp;&nbsp;&nbsp;DOLLAR_HEX</td><td>Allows hexadecimal constants to be expressed Motorola style ($?=&gt;0x?)</td></tr>
     <tr><td>&nbsp;&nbsp;&nbsp;GBL</td><td>Causes all undefined symbols to automatically be declared
       global. Use with care. </td></tr>
+    <tr><td>&nbsp;&nbsp;&nbsp;HEX_LOCAL</td><td>Allows local symbols to be hexidecimal.</td></tr>
     <tr><td>&nbsp;&nbsp;&nbsp;LC</td><td>Obsolete. Has no effect.</td></tr>
     <tr><td>&nbsp;&nbsp;&nbsp;LOWER_CASE</td><td>Makes all symbols and labels case sensitive.</td></tr>
     <tr><td>&nbsp;&nbsp;&nbsp;LSB</td><td>Control local symbol block. <a href="#gen_localSymbols">DETAILS</a></td></tr>
@@ -992,7 +993,7 @@ the stack pointer on a named stack. Examples:
   Some examples:
   </p>
     <pre>
-      .ENABL MOS,AMA,USD
+      .ENABL MOS,AMA,USD,HEX_LOCAL
       .DSABL WORD,GBL
       .ENABL LSB
     </pre>
