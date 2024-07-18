@@ -139,7 +139,8 @@ enum misc {
    ED_CR  	=0x01000,	/* enable carriage returns in source */
    ED_TRUNC	=0x02000, 	/* enable truncation check in .byte and .word */
    ED_SIMPLE=0x04000,	/* enable simple .ifdf/.ifndf expression (technically disables the complex test for def/ndef symbols). */
-   ED_CPU   =0x08000	/* enable reporting checks for different behavior on different model CPU's (mac11) */
+   ED_CPU   =0x08000,	/* enable reporting checks for different behavior on different model CPU's (mac11) */
+   ED_HEXLCL=0x10000	/* allow local symbols to be hexidecimal */
 };
 
 #endif /* _TOKEN_DEFS_H_ */

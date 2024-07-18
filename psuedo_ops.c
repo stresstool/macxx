@@ -1990,6 +1990,7 @@ static struct
 	{ "SIMPLE", ED_SIMPLE },
 	{ "CPU_CHECK", ED_CPU },
 	{ "TRUNCATE_CHECK", ED_TRUNC },
+	{ "HEX_LOCAL", ED_HEXLCL },
 	{ 0, 0 }
 };
 
@@ -2051,7 +2052,7 @@ static int op_edcommon(int onoff)
 				edmask &= ~flg;
 			else
 				edmask |= flg;
-			if ( edstuff[i].flag & ED_LSB )
+			if ( (edstuff[i].flag & ED_LSB) )
 			{  /* if messing with an LSB, */
 				current_lsb = next_lsb++;   /* set it up */
 				autogen_lsb = 65000;  /* autolabel for macro processing */

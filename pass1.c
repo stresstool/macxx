@@ -1217,7 +1217,7 @@ int get_token( void )
                     {
                         if (c == '$')
                         {
-                            if (min_radix >= 10)
+							if ( !(edmask&ED_HEXLCL) && min_radix >= 10 )
                             {
                                 bad_token(tkn_ptr,"Local symbols must be decimal");
                             }
