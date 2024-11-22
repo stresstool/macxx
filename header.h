@@ -310,6 +310,7 @@ extern void show_timer( void );
 extern void qksort (SS_struct *array[],unsigned int num_elements);
 extern int getAMATag(const FN_struct *fnd);
 extern void setAMATag(FN_struct *fnd, unsigned short tag);
+extern void dumpAMATags(const FN_struct *fnd);
 extern int totalTagsUsed;
 extern int totalTagsChecked;
 extern void change_section(SEG_struct *new_seg);

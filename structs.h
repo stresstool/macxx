@@ -48,6 +48,9 @@ typedef struct AMA_Tags_t
 	struct AMA_Tags_t *next;
 	unsigned short line;
 	unsigned short tag;
+	unsigned short macro_line;
+	unsigned short macro_level;
+	char macro_name[17];
 } AMA_Tags_t;
 
 typedef struct fn_struct {

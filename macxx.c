@@ -425,6 +425,7 @@ int main(int argc, char *argv[])
 			if (squeak)
 				printf("Processing file %s\n", current_fnd->fn_nam->relative_name);
 			pass0(fileNumber); /* else do .MAC file input */
+			dumpAMATags(current_fnd);
 			if (fclose(current_fnd->fn_file) != 0)
 			{
 				sprintf(emsg,"Unable to close file: %s",

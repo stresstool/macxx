@@ -102,6 +102,46 @@ static AMA_Tags_t *tagPool;
 static int tagPoolQty, tagPoolUsed;
 int totalTagsChecked,totalTagsUsed;
 
+static int hashAMATag(const FN_struct *fnd)
+{
+	int idx;
+	idx = fnd->fn_line;
+	if ( macro_level && marg_head )
+	{
+		char *src = marg_head->marg_name;
+		idx += 10000 * macro_level;
+		idx += 20000 * marg_head->marg_lineno;
+		while ( *src )
+			idx += *src++ * 13;
+	}
+	return idx%AMA_TAG_HASH_SIZE;
+}
+
+/* Look for AMA tag in hash table
+ * At entry:
+ * @param ptr - pointer to AMA_Tags_t structure
+ * @param fnd - pointer to current file
+ *
+ * At exit:
+ * @return 0 if entry matches, 1 if entry does not match
+ */
+static int chkAMATag(AMA_Tags_t *ptr, const FN_struct *fnd)
+{
+	if ( macro_level && marg_head )
+	{
+		if ( ptr->line == fnd->fn_line 
+			 && ptr->macro_level == macro_level
+			 && ptr->macro_line == marg_head->marg_lineno
+			 && !strncmp(ptr->macro_name,marg_head->marg_name,sizeof(ptr->macro_name)-1)
+		   )
+		{
+			return 0;		/* Have a match */
+		}
+		return 1;			/* No match */
+	}
+	return ptr->line != fnd->fn_line;	/* 1=No match, 0=match*/
+}
+
 /******************************************************************
  * Create and keep a list of locations where the AMA instructions
  * were chosen due to expression results. This is only used if
@@ -118,14 +158,12 @@ int getAMATag(const FN_struct *fnd)
 	if ( fnd->tagHashTable )
 	{
 		AMA_Tags_t *ptr;
-		int idx = fnd->fn_line%AMA_TAG_HASH_SIZE;
+		int idx = hashAMATag(fnd);
 		ptr = fnd->tagHashTable[idx];
 		while ( ptr )
 		{
-			if ( ptr->line == fnd->fn_line )
+			if ( !chkAMATag(ptr,fnd) )
 				return ptr->tag;
-			if ( ptr->line > fnd->fn_line )
-				break;
 			ptr = ptr->next;
 		}
 	}
@@ -153,29 +191,64 @@ void setAMATag(FN_struct *fnd, unsigned short tag)
 		tagPoolUsed = 0;
 		tagPool = ptr;
 	}
-	idx = fnd->fn_line%AMA_TAG_HASH_SIZE;
+	idx = hashAMATag(fnd);
 	last = fnd->tagHashTable+idx;
 	while ( (ptr = *last) )
 	{
-		if ( ptr->line == fnd->fn_line )
+		if ( !chkAMATag(ptr,fnd) )
 		{
 			/* Found existing one. Replace what's already there */
 			ptr->tag = tag;
 			return;
 		}
-		/* source lines always only increase, so a new one always gets tacked on the end */
 		last = &ptr->next;
 	}
 	ptr = tagPool+tagPoolUsed;
 	ptr->line = fnd->fn_line;
 	ptr->tag = tag;
 	ptr->next = NULL;
+	if ( marg_head )
+	{
+		ptr->macro_level = macro_level;
+		ptr->macro_line = marg_head->marg_lineno;
+		strncpy(ptr->macro_name, marg_head->marg_name, sizeof(ptr->macro_name)-1);
+		ptr->macro_name[sizeof(ptr->macro_name)-1] = 0;
+	}
+	else
+	{
+		ptr->macro_level = 0;
+		ptr->macro_line = 0;
+	}
 	*last = ptr;
 	++tagPoolUsed;
 	++totalTagsUsed;
 	return;
 }
 
+void dumpAMATags(const FN_struct *fnd)
+{
+	if ( squeak )
+	{
+		if ( fnd->tagHashTable )
+		{
+			AMA_Tags_t *ptr, **last;
+			int idx;
+			printf("dumpAMATags():\n");
+			for (idx=0; idx < AMA_TAG_HASH_SIZE; ++idx)
+			{
+				last = fnd->tagHashTable+idx;
+				while ( (ptr = *last) )
+				{
+					printf("\t%3d:%d: macro: level=%d, name='%s':%d, tag=0x%X\n",
+						   idx, ptr->line, ptr->macro_level, ptr->macro_name, ptr->macro_line, ptr->tag);
+					last = &ptr->next;
+				}
+			}
+		}
+		else
+			printf("dumpAMATags(): No entries\n");
+	}
+}
 /******************************************************************
  * Pick up memory for special segment block storage
  */
@@ -410,6 +483,7 @@ gt_loop:
     else
     {
         unsigned char *src;
+		++marg_head->marg_lineno;		/* Advance a fake line number in macro source */
         src = marg_head->marg_ptr;    /* point to macro text */
         MDEBUG(("Reading macro\n"));
         while (1)
