@@ -1,0 +1,468 @@
+
+To support TOC (Table of contents)
+
+========================================================================================================================
+File - gc.c
+
+added
+
+/******************************************************************************
+Change Log
+
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG 
+
+******************************************************************************/
+
+
+#define toc_desc	qual_tbl[QUAL_TOC]	/* By TRG 20240503 to support TOC */
+
+DEFTYP(def_toc,".toc")	/* By TRG 20240503 to support TOC */
+
+    {qual_tbl+QUAL_TOC,def_toc},    /* /TOC=filename By TRG 20240503 to support TOC */
+
+
+
+Changed
+----------from
+                err_msg( MSG_FATAL, "Sorry, TEMP option is no longer supported\n" );
+----------to
+                err_msg( MSG_FATAL, "Sorry, TEMP option is no longer supported, did you mean TOC\n" );	/* By TRG 20240503 to support TOC */
+
+
+
+========================================================================================================================
+File - gual_tbl.h
+
+added
+/******************************************************************************
+Change Log
+
+	05-03-2024	- TRG - Added support for TOC (Table of contents) file
+
+******************************************************************************/
+
+
+QTBL(0, 1, 0, 1, 0, 1, QUAL_TOC,	"TOC", OUT_FN_TOC),	/* toc file description By TRG 20240503 to support TOC */
+
+
+
+========================================================================================================================
+File - token_def.h
+
+added
+
+/******************************************************************************
+Change Log
+
+	05-03-2024	- TRG - Added support for TOC (Table of contents) file
+
+******************************************************************************/
+
+   OUT_FN_TOC,		/* By TRG 20240503 to support TOC */
+
+
+
+
+
+
+========================================================================================================================
+File - macxx.c
+
+added
+
+/******************************************************************************
+Change Log
+
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG 
+
+******************************************************************************/
+
+
+			list_toc_line_no = 0;		/* By TRG 20240503 to support TOC */
+			list_toc_page_no = 1;		/* By TRG 20240503 to support TOC */
+
+
+Changed
+----------from
+        if (!(lis_fp = fopen(output_files[OUT_FN_LIS].fn_buff,"w")))
+
+----------to
+        if (!(lis_fp = fopen(output_files[OUT_FN_LIS].fn_buff,"w+")))	/* By TRG 20240503 to support TOC */
+
+
+
+added
+
+    if (output_files[OUT_FN_TOC].fn_present)
+    {  /* By TRG 20240503 to support TOC */
+    	if (!(toc_fp = fopen(output_files[OUT_FN_TOC].fn_buff,"w")))
+    	{
+    		sprintf(emsg,"Error creating TOC file: %s\n",
+    			output_files[OUT_FN_TOC].fn_buff);
+    		perror(emsg);
+    		EXIT_FALSE;
+    	}
+    }
+
+
+
+
+Changed
+----------from
+    if (lis_fp) fclose(lis_fp);
+
+----------to
+    if (toc_fp)
+    {  /* By TRG 20240503 to support TOC */
+    	fprintf(toc_fp, "\n");
+    	if (lis_fp)
+    	{ /* If LIST file and TOC file - append LIST file to end of TOC file */
+    		fflush(lis_fp);		/* files have not been closed so write out rest of files */
+    		fflush(toc_fp);
+    		rewind(lis_fp);		/* back to the beginning of list file */
+    		while( fgets(list_stats.listBuffer, sizeof(list_stats.listBuffer), lis_fp) != NULL )
+    		{  /* Can use listBuffer now that it's not needed any longer */
+    			fputs(list_stats.listBuffer,toc_fp);
+    		}
+    		fclose(lis_fp);
+    		fclose(toc_fp);
+    		if (unlink(output_files[OUT_FN_LIS].fn_buff) < 0)
+    		{  /* Delete current LIST file */
+    			sprintf(inp_str,"Error deleting file: %s\n",output_files[OUT_FN_LIS].fn_buff);
+    			perror(inp_str);
+    		}
+    		else
+    		{  /* Rename appended TOC file and move to current location of LIST file */
+    			rename(output_files[OUT_FN_TOC].fn_buff,output_files[OUT_FN_LIS].fn_buff);
+    		}
+    	}
+    	else
+    	{  /* No LIST file so keep TOC file */
+    		fclose(toc_fp);
+    	}
+    }
+    else if (lis_fp)
+    { /* No TOC file so keep LIST file */
+    	fclose(lis_fp);
+    }
+
+
+
+
+========================================================================================================================
+File - header.h
+
+added
+
+/******************************************************************************
+Change Log
+
+	05-03-2024	- TRG - Added support for TOC (Table of contents) file
+
+******************************************************************************/
+
+
+#define toc_fp output_files[OUT_FN_TOC].fn_file		/* By TRG 20240503 to support TOC */
+
+
+Changed
+----------from
+extern void puts_titles(void);
+
+----------to
+extern void puts_titles(int plus_sign);		/* TRG 20240503 to support TOC */
+
+
+========================================================================================================================
+File - psuedo_ops.c
+
+added
+
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG
+
+
+
+changed int op_title(void)
+
+int op_title(void)
+{
+	int c, len = 0;
+	char *s = inp_ptr;
+	if ( lis_fp != 0 )
+	{
+		while ( len < LLIST_SIZE - 1 )
+		{
+			c = *s;
+			if ( (cttbl[c] & CT_EOL) == 1 )
+				break;
+			++s;
+			++len;
+		}
+		if ( !(c = lis_title[0]) )
+			c = '\f';
+		snprintf(lis_title, sizeof(lis_title), "%c%-40s %s %s   %s",
+				 c, " ", macxx_name, macxx_version, ascii_date);
+		if ( len > (int)sizeof(lis_title) - 3 )
+			len = sizeof(lis_title) - 3;
+		memcpy(lis_title + 1, inp_ptr, len);
+	}
+	f1_eatit();
+	return 0;
+}
+
+changed int op_sbttl(void)
+
+added
+
+	if ( (options[QUAL_TOC] && options[QUAL_LIST] && list_toc) || (options[QUAL_TOC] && !options[QUAL_LIST]) )
+	{  /* By TRG 20240503 to support TOC */
+		if (pass !=0)
+		{
+			fprintf(toc_fp,"%5ld-%4ld%c",list_toc_page_no,list_toc_line_no,(include_level > 0) ? '+' : ' ');
+			fprintf(toc_fp, "%c%s",(include_level > 0) ? '\t' : ' ',inp_ptr);
+		}
+	}
+
+
+
+changed int op_page(void)
+
+int op_page(void)
+{
+	show_line = 0;       /* don't display .page */
+	lis_line = 0;
+	if ( options[QUAL_TOC] )	/* By TRG 20240503 to support TOC */
+	{
+		++list_toc_page_no;
+		list_toc_line_no = 0;
+	}
+	return 0;
+}
+
+
+changed int op_include(void)
+
+
+added
+
+	if ( (options[QUAL_TOC] && options[QUAL_LIST] && list_toc) || (options[QUAL_TOC] && !options[QUAL_LIST]) )
+	{  /* By TRG 20240503 to support TOC */
+		if (pass !=0)
+		{
+			fprintf(toc_fp,"%5ld-%4ld \t",list_toc_page_no,list_toc_line_no);	/* write page and line number */
+			fprintf(toc_fp, "%s",current_fnd->fn_name_only);			/* write include filename */
+			fprintf(toc_fp, "\t%s",inp_ptr);					/* write rest of .include line */
+		}
+	}
+
+
+
+
+
+
+
+
+
+========================================================================================================================
+File - listctrl.h
+
+added
+
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG 
+
+
+extern unsigned long list_toc_page_no;			/* page number of TOC listing - By TRG 20240503 */
+extern unsigned long list_toc_line_no;			/* line number of TOC listing - By TRG 20240503 */
+extern int list_toc_hd;					/* header flag for TOC listing - By TRG 20240503 */
+
+
+
+========================================================================================================================
+File - listctrl.c
+
+added
+
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG 
+
+unsigned long list_toc_page_no = 1;		/* page number of TOC listing - By TRG 20240503 */
+unsigned long list_toc_line_no = 0;		/* line number of TOC listing - By TRG 20240503 */
+int list_toc_hd = 0;				/* header flag for TOC listing - By TRG 20240503 */
+
+
+
+changed
+-----------------------from
+				sprintf(outLinePtr + LLIST_SEQ, "%5ld%c",
+					lstat->line_no, (lstat->include_level > 0) ? '+' : ' ');
+
+----------------------to
+
+			if ( options[QUAL_TOC] )		/* By TRG 20240503 to support TOC */
+			{
+				sprintf(outLinePtr + LLIST_SEQ, "%5ld%c",
+					list_toc_line_no, (lstat->include_level > 0) ? '+' : ' ');
+			}
+			else
+			{
+				sprintf(outLinePtr + LLIST_SEQ, "%5ld%c",
+					lstat->line_no, (lstat->include_level > 0) ? '+' : ' ');
+			}
+
+---------------------
+
+
+
+
+
+========================================================================================================================
+File - pass1.c
+
+
+added
+
+/******************************************************************************
+Change Log
+
+	05-03-2024	- Added support for TOC (Table of contents) file - TRG 
+
+******************************************************************************/
+
+
+
+
+removed
+
+        ++current_fnd->fn_line;   /* increment the source line # */
+
+added
+
+
+/* must be here incase end of file return - should not be incremented - By TRG 20240503 to support TOC */
+        ++current_fnd->fn_line;		/* increment the source line # */
+        ++list_toc_line_no;		/* increment the TOC source line number */
+
+
+
+
+
+changed void puts_titles(void)
+
+void puts_titles(int plus_sign)
+{
+	fputs(lis_title,lis_fp);      /* write title line */
+
+	if ( options[QUAL_TOC] )		/* By TRG 20240503 to support TOC */
+	{
+		if (!list_toc_hd)		/* write TOC header only one time */
+		{
+			fputs(lis_title,toc_fp);			/* write title header to TOC file */
+			fprintf(toc_fp,"\nTABLE OF CONTENTS\n\n");
+			list_toc_hd = 1;
+		}
+		fprintf(lis_fp," PAGE %ld%c\n",list_toc_page_no,(plus_sign > 0) ? '+' : ' ');	/* Page number for listing file */
+	}
+	else
+	{
+		fprintf(lis_fp,"\n");
+	}
+	if (!lis_subtitle[0])
+	{
+		fputs("\n\n",lis_fp);      /* no subtitle yet */
+	}
+	else
+	{
+		fputs(lis_subtitle,lis_fp);    /* write subtitle line */
+	}
+	lis_line = LIS_LINES_PER_PAGE-3;          /* reset the line counter */
+	*lis_title = '\f';        /* make first char a Form Feed */
+}
+
+
+
+
+
+changed void puts_lis(void)
+
+void puts_lis(const char *string, int lines )
+/*
+ * At entry:
+ *	string - pointer to text to write to map file
+ *	lines - number of lines in the text (0=don't know how many)
+ */
+{
+	int i;
+	const char *s;
+	if (lis_fp == 0)
+		return;     /* easy out if no lis file */
+	if (!lis_title[0])
+	{
+		snprintf(lis_title,sizeof(lis_title),"\f%-40s %s %s   %s",
+			output_files[OUT_FN_OBJ].fn_name_only,
+			macxx_name,macxx_version,ascii_date);
+	}
+	if ((i=lines) == 0)
+	{
+		if ((s = string) != 0 )			   /* point to string */
+		{
+			while (*s)
+			{
+				if (*s++ == '\n')
+					i++;  /* count \n's in text */
+			}
+		}
+	}
+	if ( options[QUAL_TOC] )		/* By TRG 20240503 to support TOC */
+	{
+		if (list_toc_line_no == 1)		/* New page number ? */
+		{
+			puts_titles(0);		/* print without plus sign */
+		}
+		else if (i == 0 || i > lis_line)
+		{    /* room on page? */
+			puts_titles(1);		/* print with plus sign */
+		}
+	}
+	else
+	{
+		if (i == 0 || i > lis_line)
+		{    /* room on page? */
+			puts_titles(1);		/* print with plus sign */
+		}
+	}
+	if (i != 0)
+	{
+		fputs(string,lis_fp);     /* write caller's text */
+		lis_line -= i;            /* take lines from total */
+	}
+	return;              /* done */
+}
+
+
+
+
+
+========================================================================================================================
+File - sortsym.c	-	note: this has nothing to do with the TOC update - just a bug fix - I found
+
+added
+
+
+/******************************************************************************
+Change Log
+
+    05/09/2024	- Bug Fix - lis_subtitle for "Segment Summary" missing NewLine  - TRG
+
+******************************************************************************/
+
+
+changed
+-----from
+        strncpy(lis_subtitle,"Segment summary",sizeof(lis_subtitle));
+
+-----to
+        strncpy(lis_subtitle,"Segment Summary\n",sizeof(lis_subtitle));		/* Bug Fix - Added newline TRG 20240503 */
+
+
+
+
+

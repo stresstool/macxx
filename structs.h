@@ -46,11 +46,8 @@ typedef struct my_desc {	/* define a descriptor structure cuz	*/
 typedef struct AMA_Tags_t
 {
 	struct AMA_Tags_t *next;
-	unsigned short line;
+	unsigned short virt_line;
 	unsigned short tag;
-	unsigned short macro_line;
-	unsigned short macro_level;
-	char macro_name[17];
 } AMA_Tags_t;
 
 typedef struct fn_struct {
@@ -69,6 +66,7 @@ typedef struct fn_struct {
    int macro_level;		/* saved macro level			*/
    AMA_Tags_t **tagHashTable;
    unsigned short fn_line;	/* current line number of input file    */
+   unsigned short fn_virt_line;	/* Virtual line number (includes all lines injected due to macro expansion and rept blocks) */
    unsigned char fn_filenum;	/* file number				*/
    unsigned fn_present:1;	/* this file is present (T/F)		*/
    unsigned fn_library:1;	/* this file is a library		*/

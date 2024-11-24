@@ -94,8 +94,6 @@ typedef struct mcall_struct {
    unsigned short marg_count;	/* loop count for .REPT */
    unsigned short marg_icount;	/* initial loop or argument count */
    unsigned short marg_flag;	/* macro type (.IRP(C)/.REPT/macro_call */
-   unsigned short marg_lineno;	/* current line number in macro call */
-   char marg_name[17];		/* room for macro name */
 } Mcall_struct;
 
 #define OP_HASH_SIZE 359

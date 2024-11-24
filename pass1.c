@@ -102,20 +102,7 @@ static AMA_Tags_t *tagPool;
 static int tagPoolQty, tagPoolUsed;
 int totalTagsChecked,totalTagsUsed;
 
-static int hashAMATag(const FN_struct *fnd)
-{
-	int idx;
-	idx = fnd->fn_line;
-	if ( macro_level && marg_head )
-	{
-		char *src = marg_head->marg_name;
-		idx += 10000 * macro_level;
-		idx += 20000 * marg_head->marg_lineno;
-		while ( *src )
-			idx += *src++ * 13;
-	}
-	return idx%AMA_TAG_HASH_SIZE;
-}
+#define hashAMATag(xx) (xx->fn_virt_line % AMA_TAG_HASH_SIZE)
 
 /* Look for AMA tag in hash table
  * At entry:
@@ -125,22 +112,18 @@ static int hashAMATag(const FN_struct *fnd)
  * At exit:
  * @return 0 if entry matches, 1 if entry does not match
  */
+#if 0
 static int chkAMATag(AMA_Tags_t *ptr, const FN_struct *fnd)
 {
-	if ( macro_level && marg_head )
-	{
-		if ( ptr->line == fnd->fn_line 
-			 && ptr->macro_level == macro_level
-			 && ptr->macro_line == marg_head->marg_lineno
-			 && !strncmp(ptr->macro_name,marg_head->marg_name,sizeof(ptr->macro_name)-1)
-		   )
-		{
-			return 0;		/* Have a match */
-		}
-		return 1;			/* No match */
-	}
-	return ptr->line != fnd->fn_line;	/* 1=No match, 0=match*/
+	int retv = ptr->virt_line != fnd->fn_virt_line;
+	printf("chkAMATag(): retv=%d, fn_line=%d, fn_virt_line=%d, ptr->virt_line=%d\n",
+		   retv, fnd->fn_line, fnd->fn_virt_line, ptr->virt_line);
+	printf("chkAMATag(): inp_str: %s", inp_str);
+	return retv;	/* 1=No match, 0=match*/
 }
+#else
+#define chkAMATag(ptr, fnd) (ptr->virt_line != fnd->fn_virt_line)
+#endif
 
 /******************************************************************
  * Create and keep a list of locations where the AMA instructions
@@ -204,21 +187,9 @@ void setAMATag(FN_struct *fnd, unsigned short tag)
 		last = &ptr->next;
 	}
 	ptr = tagPool+tagPoolUsed;
-	ptr->line = fnd->fn_line;
+	ptr->virt_line = fnd->fn_virt_line;
 	ptr->tag = tag;
 	ptr->next = NULL;
-	if ( marg_head )
-	{
-		ptr->macro_level = macro_level;
-		ptr->macro_line = marg_head->marg_lineno;
-		strncpy(ptr->macro_name, marg_head->marg_name, sizeof(ptr->macro_name)-1);
-		ptr->macro_name[sizeof(ptr->macro_name)-1] = 0;
-	}
-	else
-	{
-		ptr->macro_level = 0;
-		ptr->macro_line = 0;
-	}
 	*last = ptr;
 	++tagPoolUsed;
 	++totalTagsUsed;
@@ -239,8 +210,8 @@ void dumpAMATags(const FN_struct *fnd)
 				last = fnd->tagHashTable+idx;
 				while ( (ptr = *last) )
 				{
-					printf("\t%3d:%d: macro: level=%d, name='%s':%d, tag=0x%X\n",
-						   idx, ptr->line, ptr->macro_level, ptr->macro_name, ptr->macro_line, ptr->tag);
+					printf("\t%3d:%d: tag=0x%X\n",
+						   idx, ptr->virt_line, ptr->tag);
 					last = &ptr->next;
 				}
 			}
@@ -413,6 +384,7 @@ int get_text( void )
 gt_loop:
 	strPtr = inp_str;
 	inp_ptr = inp_str;
+	++current_fnd->fn_virt_line;	/* Always advance the virtual line number */
     if (macro_level == 0)
     {
 /*        ++current_fnd->fn_line; */  /* increment the source line # */
@@ -483,9 +455,8 @@ gt_loop:
     else
     {
         unsigned char *src;
-		++marg_head->marg_lineno;		/* Advance a fake line number in macro source */
         src = marg_head->marg_ptr;    /* point to macro text */
-        MDEBUG(("Reading macro\n"));
+        MDEBUG(("Reading macro.\n"));
         while (1)
         {
             int cc;

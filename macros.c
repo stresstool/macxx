@@ -589,9 +589,6 @@ int macro_call(Opcode *opc)
     marg_head->marg_cndnst = condit_nest;
     marg_head->marg_cndwrd = condit_word;
     marg_head->marg_cndpol = condit_polarity;
-	marg_head->marg_lineno = 0;
-	strncpy(marg_head->marg_name, opc->op_name, sizeof(marg_head->marg_name)-1);
-	marg_head->marg_name[sizeof(marg_head->marg_name)-1] = 0;
     condit_level = 0;
     condit_nest = 0;
     condit_word = 0;
@@ -966,9 +963,6 @@ int op_irp( void )            /* .IRP macro */
     marg_head->marg_cndnst = condit_nest;
     marg_head->marg_cndwrd = condit_word;
     marg_head->marg_cndpol = condit_polarity;
-	marg_head->marg_lineno = 0;
-	strncpy(marg_head->marg_name, "IRP", sizeof(marg_head->marg_name)-1);
-	marg_head->marg_name[sizeof(marg_head->marg_name)-1] = 0;
     condit_level = 0;
     condit_nest = 0;
     condit_word = 0;
@@ -1119,9 +1113,6 @@ int op_irpc( void )           /* .IRPC macro */
     marg_head->marg_cndnst = condit_nest;
     marg_head->marg_cndwrd = condit_word;
     marg_head->marg_cndpol = condit_polarity;
-	marg_head->marg_lineno = 0;
-	strncpy(marg_head->marg_name, "IRPC", sizeof(marg_head->marg_name)-1);
-	marg_head->marg_name[sizeof(marg_head->marg_name)-1] = 0;
     condit_level = 0;
     condit_nest = 0;
     condit_word = 0;
@@ -1215,9 +1206,6 @@ int op_rept( void )           /* .REPT macro */
         marg_head->marg_cndnst = condit_nest;
         marg_head->marg_cndwrd = condit_word;
         marg_head->marg_cndpol = condit_polarity;
-		marg_head->marg_lineno = 0;
-		strncpy(marg_head->marg_name, "REPT", sizeof(marg_head->marg_name)-1);
-		marg_head->marg_name[sizeof(marg_head->marg_name)-1] = 0;
         condit_level = 0;
         condit_nest = 0;
         condit_word = 0;

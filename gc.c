@@ -233,6 +233,7 @@ int fn_init(FN_struct *pointer)
     pointer->fn_next = 0;        /* pointer to next structure */
     pointer->fn_present = 0;     /* flag indicating filename present */
     pointer->fn_line = 0;        /* start at line number 0 */
+	pointer->fn_virt_line = 0;	/* start virtual line number at 0 too */
     *fn_pool = 0;            /* make sure array starts with 0 */
     pointer->macro_level = 0;        /* and there's no macro level */
     return(TRUE);            /* always return TRUE */
