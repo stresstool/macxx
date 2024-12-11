@@ -2925,6 +2925,11 @@ int op_csect(void)
 		return 1;
 	if ( new_one != 0 )
 		flags = PS_OVR | PS_RW;
+	else if ( new_seg->flg_zero )
+	{
+		bad_token((char *)0, "Section previously declared as a .BSECT or base paged .PSECT.");
+		return 1;
+	}
 	op_segcomm(0, new_one, new_seg, flags, 0, 0, 0l);
 	return 1;
 }
@@ -2946,6 +2951,11 @@ int op_bsect(void)
 		{
 			flags = PS_CON | PS_BASE | PS_RW;
 		}
+	}
+	else if ( !new_seg->flg_zero )
+	{
+		bad_token((char *)0, "Section previously declared as a .CSECT or non-base paged .PSECT.");
+		return 1;
 	}
 	op_segcomm(0, new_one, new_seg, flags, 0, 0, 256l);
 	return 1;
